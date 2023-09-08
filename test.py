@@ -120,7 +120,7 @@ def cancel():
 app.register_blueprint(app1_blueprint, url_prefix='/app1')
 app.register_blueprint(app2_blueprint, url_prefix='/app2')
 app.register_blueprint(app3_blueprint, url_prefix='/app3')
-server = app.server
+# server = app.server
 if __name__ == '__main__':
     # app.run(host='0.0.0.0', port=8080, debug=True)
-    app.run_server(debug=False)
+    app.run(port = 8080, debug=False)
