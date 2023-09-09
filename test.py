@@ -4,9 +4,9 @@ import time
 
 app = Flask(__name__)
 
-app1_blueprint = Blueprint('app1', __name__)
-app2_blueprint = Blueprint('app2', __name__)
-app3_blueprint = Blueprint('app3', __name__)
+app1_blueprint = Blueprint('app1', __name__)    #booking
+app2_blueprint = Blueprint('app2', __name__)    #reservation
+app3_blueprint = Blueprint('app3', __name__)    #cancel
 
 client = MongoClient('mongodb+srv://sparking:Az123456@dbs.bgpecdq.mongodb.net/?retryWrites=true&w=majority')
 db = client['ATH_UET']
@@ -31,7 +31,7 @@ def check_booking(idUser, reservation, time, parking):
     update = {'$set': {'reservation': reservation, 'time_booking': time, 'parking': parking, 'booking':1 }}
     collection_users.update_one(query, update)
 
-# hủy đặt chỗ
+# hủy đặt chỗ chính
 def cancel_reservation(idUser):    
     doc = collection_users.find_one({'idUser': idUser})  # truy vấn người dùng
     reservation = doc['reservation']    #chỗ trong bãi xe
@@ -45,7 +45,14 @@ def cancel_reservation(idUser):
             result = collection_parking.update_one(query, update)            
 # đặt trước giờ
 
+@app1_blueprint.route('/booking', methods = ['POST'])
 # Hàm xử lý booking sau khi nhận request từ app
+def booking():
+    if request.method == 'POST':
+        data = request.json
+        response = process_booking(data)
+        return jsonify(response)
+
 def process_booking(data):
     try:
         name_parking = data.get('Parking')
@@ -57,15 +64,22 @@ def process_booking(data):
         reservation = find_empty_parking(name_parking)
         print(date, time)
         datetime = date + time
-        print(datetime)
         check_booking(user, reservation, datetime, name_parking)
         print("Đã update đặt chỗ vị trí: ", reservation, "tại bãi xe ", name_parking)
-
         return {"reservation": reservation}
     except Exception as e:
         return {"error": str(e)}
 
-#đặt chỗ trước giờ
+@app2_blueprint.route('/reservation', methods = ['POST'])
+#đặt chỗ ngay
+def reservation():
+    if request.method == 'POST':
+        print("aaaaa")
+        data = request.json
+        response = process_reservation(data)
+        print(data)
+        return jsonify(response)
+    
 def process_reservation(data):
     try:
         name_parking = data.get('Parking')
@@ -73,14 +87,23 @@ def process_reservation(data):
         time = data.get('TimeBooking')  
 
         reservation = find_empty_parking(name_parking)
-        check_booking(user, reservation, time)
+        check_booking(user, reservation, time, name_parking)
         print("đặt chỗ thành công")
         print(reservation)
         return {"reservation": reservation}
     except Exception as e:
         return {"error": str(e)}      
 
+@app3_blueprint.route('/cancel', methods = ['POST'])
+
 # hủy đặt chỗ hiện tại
+def cancel():
+    if request.method == 'POST':
+        data = request.json
+        print("đã đọc được", data)
+        response = process_cancel(data)
+        return jsonify(response)
+    
 def process_cancel(data):
     try:
         user = data.get('User')
@@ -91,36 +114,11 @@ def process_cancel(data):
     except Exception as e:
         return {"error": str(e)}          
 
-@app1_blueprint.route('/booking', methods = ['POST'])
-@app2_blueprint.route('/reservation', methods = ['POST'])
-@app3_blueprint.route('/cancel', methods = ['POST'])
-
-def booking():
-    if request.method == 'POST':
-        data = request.json
-        response = process_booking(data)
-        return jsonify(response)
-
-def reservation():
-    if request.method == 'POST':
-        print("aaaaa")
-        data = request.json
-        response = process_reservation(data)
-        print(data)
-        return jsonify(response)
-
-def cancel():
-    if request.method == 'POST':
-        data = request.json
-        print("đã đọc được", data)
-        response = process_cancel(data)
-        return jsonify(response)
-
 # Đăng ký các ứng dụng vào ứng dụng chính
 app.register_blueprint(app1_blueprint, url_prefix='/app1')
 app.register_blueprint(app2_blueprint, url_prefix='/app2')
 app.register_blueprint(app3_blueprint, url_prefix='/app3')
-# server = app.server
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
-    # app.run(port = 8080, debug=False)
+    app.run(host='0.0.0.0', port=8080, debug=False)
+    
