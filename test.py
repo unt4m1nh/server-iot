@@ -38,10 +38,13 @@ def cancel_reservation(idUser):
     nameParking = doc['parking']    #tên bãi xe
     parkdoc = collection_parking.find_one({'nameParking': nameParking})
     data = parkdoc['Slots']
+    update1 = {"$set": {"booking": 0}}
+    result1 = collection_users.update_many({'idUser': idUser}, update1)
     for item in data:
         if item['slot'] == reservation:
             query = {'Slots.status': 2, 'nameParking': nameParking} #check xem có cần query vế trước ko
             update = {"$set": {"Slots.$.status": 0}}
+            
             result = collection_parking.update_one(query, update)            
 # đặt trước giờ
 
@@ -107,6 +110,7 @@ def process_cancel(data):
     try:
         user = data.get('User')
         print(user)
+
         cancel_reservation(user)
         print("Đã hủy đặt chỗ cho người dùng", user)
         return {"message": "Đã hủy thành công"}
