@@ -68,7 +68,7 @@ def process_booking(data):
         print(date, time)
         datetime = date + time
         check_booking(user, reservation, datetime, name_parking)
-        print("Người dùng ", user, "Đã đặt vị trí ",reservation, "tại bãi xe", name_parking, "bắt đầu vào:", datetime)
+        print("Người dùng ", user, "Đã đặt trước vị trí ",reservation, "tại bãi xe", name_parking, "bắt đầu vào:", datetime)
         return {"reservation": reservation}
     except Exception as e:
         return {"error": str(e)}
@@ -91,7 +91,7 @@ def process_reservation(data):
 
         reservation = find_empty_parking(name_parking)
         check_booking(user, reservation, time, name_parking)
-        print("Người dùng ", user, "Đã đặt vị trí ",reservation, "tại bãi xe", name_parking, "bắt đầu vào:", time)
+        print("Người dùng ", user, "Đã đặt vị trí ",reservation, "tại bãi xe", name_parking)
         return {"reservation": reservation}
     except Exception as e:
         return {"error": str(e)}      
