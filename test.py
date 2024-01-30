@@ -17,11 +17,11 @@ collection_users = db['users']
 def find_empty_parking(nameParking):
     query_parking = {'nameParking': nameParking}
     doc = collection_parking.find_one(query_parking)
-    data = doc['Slots']
+    data = doc['SlotStatus']
     for item in data:
         if item['status'] == 0:
-            query = {'Slots.status': 0, 'nameParking': nameParking}
-            update = {"$set": {"Slots.$.status": 2}}
+            query = {'SlotStatus.status': 0, 'nameParking': nameParking}
+            update = {"$set": {"SlotStatus.$.status": 2}}
             result = collection_parking.update_one(query, update)
             return item['slot']
 
@@ -37,14 +37,13 @@ def cancel_reservation(idUser):
     reservation = doc['reservation']    #chỗ trong bãi xe
     nameParking = doc['parking']    #tên bãi xe
     parkdoc = collection_parking.find_one({'nameParking': nameParking})
-    data = parkdoc['Slots']
+    data = parkdoc['SlotStatustatus']
     update1 = {"$set": {"booking": 0}}
     result1 = collection_users.update_many({'idUser': idUser}, update1)
     for item in data:
         if item['slot'] == reservation:
-            query = {'Slots.status': 2, 'nameParking': nameParking} #check xem có cần query vế trước ko
-            update = {"$set": {"Slots.$.status": 0}}
-            
+            query = {'SlotStatus.status': 2, 'nameParking': nameParking} #check xem có cần query vế trước ko
+            update = {"$set": {"SlotStatus.$.status": 0}}  
             result = collection_parking.update_one(query, update)            
 # đặt trước giờ
 
@@ -69,7 +68,7 @@ def process_booking(data):
         datetime = date + time
         check_booking(user, reservation, datetime, name_parking)
         print("Người dùng ", user, "Đã đặt trước vị trí ",reservation, "tại bãi xe", name_parking, "bắt đầu vào:", datetime)
-        return {"reservation": reservation}
+        return {"Vị trí ô đỗ": reservation}
     except Exception as e:
         return {"error": str(e)}
 
@@ -77,10 +76,8 @@ def process_booking(data):
 #đặt chỗ ngay
 def reservation():
     if request.method == 'POST':
-        print("aaaaa")
         data = request.json
         response = process_reservation(data)
-        print(data)
         return jsonify(response)
     
 def process_reservation(data):
@@ -91,8 +88,8 @@ def process_reservation(data):
 
         reservation = find_empty_parking(name_parking)
         check_booking(user, reservation, time, name_parking)
-        print("Người dùng ", user, "Đã đặt vị trí ",reservation, "tại bãi xe", name_parking)
-        return {"reservation": reservation}
+        print("Người dùng", user, "đã đặt vị trí",reservation, "tại bãi xe", name_parking)
+        return {"Vị trí ô đỗ": reservation}
     except Exception as e:
         return {"error": str(e)}      
 
