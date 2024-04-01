@@ -12,6 +12,7 @@ client = MongoClient('mongodb+srv://sparking:Az123456@dbs.bgpecdq.mongodb.net/?r
 db = client['ATH_UET']
 collection_parking = db['parking']
 collection_users = db['users']
+collection_session = db['session']
 
 # Lấy vị trí trống ở dbs parking đầu vào là tên bãi xe, thay đổi trường dữ liệu của vị trí đó từ 0 thành 2
 def find_empty_parking(nameParking):
@@ -27,9 +28,27 @@ def find_empty_parking(nameParking):
 
 # Thay đổi trạng thái trên dbs user
 def check_booking(idUser, reservation, time, parking):
+    # Tìm user thông qua trường idUser
     query = {'idUser': idUser}
-    update = {'$set': {'reservation': reservation, 'time_booking': time, 'parking': parking, 'booking':1 }}
+
+    # Nội dung update
+    # update = {'$set': {'reservation': reservation, 'time_booking': time, 'parking': parking, 'booking':1 }}
+    update = {'$set': {'booking':1 }}
     collection_users.update_one(query, update)
+
+# Tạo session mới trên db Session
+def createSession(idUser, name, vehicle, parking, slot, timeBooking, date, status):
+    newSession = {
+        "idUser": idUser,
+        "name": name,
+        "vehicle": vehicle,
+        "parking": parking,
+        "slot": slot,
+        "timeBooking": timeBooking,
+        "date": date,
+        "status": status,
+    }
+    collection_session.insert_one(newSession)
 
 # hủy đặt chỗ chính
 def cancel_reservation(idUser):    
@@ -83,12 +102,14 @@ def reservation():
 def process_reservation(data):
     try:
         name_parking = data.get('Parking')
-        user = data.get('User')
-        time = data.get('TimeBooking')  
-
+        user_id = data.get('UserId')
+        username = data.get('Username')
+        time = data.get('TimeBooking') 
+        date = data.get('Date') 
         reservation = find_empty_parking(name_parking)
-        check_booking(user, reservation, time, name_parking)
-        print("Người dùng", user, "đã đặt vị trí",reservation, "tại bãi xe", name_parking)
+        check_booking(user_id, reservation, time, name_parking)
+        createSession(user_id, username, 'Toyota Camry', name_parking, reservation, time, date, 1)
+        print("Người dùng", username, "đã đặt vị trí",reservation, "tại bãi xe", name_parking)
         return {"Vị trí ô đỗ": reservation}
     except Exception as e:
         return {"error": str(e)}      
