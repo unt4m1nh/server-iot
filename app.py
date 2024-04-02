@@ -58,12 +58,12 @@ def cancel_reservation(idUser):
     parkdoc = collection_parking.find_one({'nameParking': nameParking})
     data = parkdoc['SlotStatustatus']
     update1 = {"$set": {"booking": 0}}
-    result1 = collection_users.update_many({'idUser': idUser}, update1)
+    collection_users.update_one({'idUser': idUser}, update1)
     for item in data:
         if item['slot'] == reservation:
             query = {'SlotStatus.status': 2, 'nameParking': nameParking} #check xem có cần query vế trước ko
             update = {"$set": {"SlotStatus.$.status": 0}}  
-            result = collection_parking.update_one(query, update)            
+            collection_parking.update_one(query, update)            
 # đặt trước giờ
 
 @app1_blueprint.route('/booking', methods = ['POST'])
