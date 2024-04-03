@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify, Blueprint
 from pymongo import MongoClient
 import time
+import random
+import string
 
 app = Flask(__name__)
 
@@ -13,6 +15,12 @@ db = client['ATH_UET']
 collection_parking = db['parking']
 collection_users = db['users']
 collection_session = db['session']
+
+# Tạo sessionId
+def generate_random_string(length):
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choice(characters) for _ in range(length))
+    return random_string
 
 # Lấy vị trí trống ở dbs parking đầu vào là tên bãi xe, thay đổi trường dữ liệu của vị trí đó từ 0 thành 2
 def find_empty_parking(nameParking):
@@ -37,8 +45,9 @@ def check_booking(idUser, reservation, time, parking):
     collection_users.update_one(query, update)
 
 # Tạo session mới trên db Session
-def createSession(idUser, name, vehicle, parking, slot, timeBooking, date, status):
+def createSession(sessionId, idUser, name, vehicle, parking, slot, timeBooking, date, status):
     newSession = {
+        "sessionId": sessionId,
         "idUser": idUser,
         "name": name,
         "vehicle": vehicle,
@@ -51,7 +60,7 @@ def createSession(idUser, name, vehicle, parking, slot, timeBooking, date, statu
     collection_session.insert_one(newSession)
 
 # hủy đặt chỗ chính
-def cancel_reservation(idUser):    
+def cancel_reservation(idUser, sessionId):    
     doc = collection_users.find_one({'idUser': idUser})  # truy vấn người dùng
     reservation = doc['reservation']    #chỗ trong bãi xe
     nameParking = doc['parking']    #tên bãi xe
@@ -60,7 +69,7 @@ def cancel_reservation(idUser):
     data = parkdoc['SlotStatus']
     update1 = {"$set": {"booking": 0}}
     collection_users.update_one({'idUser': idUser}, update1)
-    collection_session.update_one({'idUser': idUser}, {"$set": {"status": 0}})
+    collection_session.update_one({'sessionId': sessionId}, {"$set": {"status": 0}})
     # for item in data:
     #     if item['slot'] == reservation:
     #         query = {'SlotStatus': 2, 'nameParking': nameParking} #check xem có cần query vế trước ko
@@ -110,7 +119,8 @@ def process_reservation(data):
         date = data.get('Date') 
         reservation = find_empty_parking(name_parking)
         check_booking(user_id, reservation, time, name_parking)
-        createSession(user_id, username, 'Toyota Camry', name_parking, reservation, time, date, 1)
+        sessionId = generate_random_string(8)
+        createSession(sessionId, user_id, username, 'Toyota Camry', name_parking, reservation, time, date, 1)
         print("Người dùng", username, "đã đặt vị trí",reservation, "tại bãi xe", name_parking)
         return {"Vị trí ô đỗ": reservation}
     except Exception as e:
@@ -129,9 +139,9 @@ def cancel():
 def process_cancel(data):
     try:
         user = data.get('User')
-        print(user)
+        sessionId = data.get('sessionId')
 
-        cancel_reservation(user)
+        cancel_reservation(user, sessionId)
         print("Đã hủy đặt chỗ cho người dùng", user)
         return {"message": "Đã hủy thành công"}
     except Exception as e:
