@@ -60,6 +60,7 @@ def cancel_reservation(idUser):
     data = parkdoc['SlotStatus']
     update1 = {"$set": {"booking": 0}}
     collection_users.update_one({'idUser': idUser}, update1)
+    collection_session.update_one({'idUser': idUser}, {"$set": {"status": 0}})
     # for item in data:
     #     if item['slot'] == reservation:
     #         query = {'SlotStatus': 2, 'nameParking': nameParking} #check xem có cần query vế trước ko
